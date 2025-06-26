@@ -1,0 +1,28 @@
+# Checkmate
+
+Fluent library for chaining small little boolean checks in a stream-like fashion.  Can be used for heath checks, logging
+the results of various forms of analysis, or just because you like fluent code.
+
+Checks are built to log to one or more `System.out`, a `PrintStream` or any custom `CheckLogger` via `Checks.builer().build()`.
+All `Checks` start by evaluating an object given a specific name.  For example, this check evaluates the status of a `java.io.File` that points to `java.home`
+
+[soure,java]
+----
+final File dir = new File(System.getProperty("java.home));
+
+Checks.builder().print(System.out, 50).build()
+        .object("JAVA_HOME", dir)
+        .check("exists", File::exists)
+        .check("is directory", file -> false)
+        .check("can write", file -> called.incrementAndGet() > 0)
+        .check("can can read", file -> called.incrementAndGet() > 0);
+----
+
+This may generate output like the following:
+
+----
+JAVA_HOME exists . . . . . . . . . . . . . . . . PASS
+JAVA_HOME is directory . . . . . . . . . . . . . FAIL
+JAVA_HOME can write. . . . . . . . . . . . . . . SKIP
+JAVA_HOME can can read . . . . . . . . . . . . . SKIP
+----

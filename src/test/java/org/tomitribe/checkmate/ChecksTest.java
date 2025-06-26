@@ -37,7 +37,7 @@ public class ChecksTest {
     @Test
     public void checkFormatting() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         checks.check("File exists").pass();
         checks.check("File is directory").fail();
@@ -72,15 +72,15 @@ public class ChecksTest {
                 .asDir();
 
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
 
         final AtomicInteger called = new AtomicInteger();
-        checks.object("JAVA_HOME", dir)
+
+        Checks.builder().print(out, 50)
+                .build().object("JAVA_HOME", dir)
                 .check("exists", File::exists)
                 .check("is directory", file -> false)
                 .check("can write", file -> called.incrementAndGet() > 0)
-                .check("can can read", file -> called.incrementAndGet() > 0)
-        ;
+                .check("can can read", file -> called.incrementAndGet() > 0);
 
         assertEquals("" +
                 "JAVA_HOME exists . . . . . . . . . . . . . . . . PASS\n" +
@@ -106,7 +106,7 @@ public class ChecksTest {
                 .asDir();
 
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final AtomicInteger called = new AtomicInteger();
         checks.object("JAVA_HOME", dir)
@@ -138,7 +138,7 @@ public class ChecksTest {
     public void checkObjectSkip() {
 
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final Map<String, String> map = new HashMap<>();
 
@@ -160,7 +160,7 @@ public class ChecksTest {
                 .asDir();
 
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final AtomicInteger called = new AtomicInteger();
         checks.object("JAVA_HOME", dir)
@@ -186,7 +186,7 @@ public class ChecksTest {
     public void checkError() {
 
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         checks.check("JAVA_HOME is full", () -> {
             throw new RuntimeException("Whoops");
@@ -209,7 +209,7 @@ public class ChecksTest {
     @Test
     public void checkWarn() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final AtomicInteger calls = new AtomicInteger();
         final Function<Path, Boolean> function = path -> calls.incrementAndGet() > -1;
@@ -232,7 +232,7 @@ public class ChecksTest {
     @Test
     public void getOrThrowSuccess() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final String expected = "magic string";
         final String actual = checks.object("keystoreFile", expected)
@@ -248,7 +248,7 @@ public class ChecksTest {
     @Test
     public void getOrThrowFail() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         try {
             final String actual = checks.object("keystoreFile", "magic string")
@@ -266,7 +266,7 @@ public class ChecksTest {
     @Test
     public void getOrThrowWarn() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         try {
             final String actual = checks.object("keystoreFile", "magic string")
@@ -283,7 +283,7 @@ public class ChecksTest {
     @Test
     public void orThrowSuccess() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final String expected = "magic string";
         checks.check("keystoreFile is defined", () -> true)
@@ -295,7 +295,7 @@ public class ChecksTest {
     @Test
     public void orThrowFail() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         try {
             checks.check("keystoreFile is defined", () -> false)
@@ -312,7 +312,7 @@ public class ChecksTest {
     @Test
     public void orThrowWarn() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         try {
             checks.check("keystoreFile is defined", () -> false, WARN)
@@ -328,7 +328,7 @@ public class ChecksTest {
     @Test
     public void orAfterSuccess() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final AtomicReference<String> actual = new AtomicReference<>();
 
@@ -346,7 +346,7 @@ public class ChecksTest {
     @Test
     public void orAfterFail() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final AtomicReference<String> actual = new AtomicReference<>();
 
@@ -364,7 +364,7 @@ public class ChecksTest {
     @Test
     public void orAfterWarn() {
         final PrintString out = new PrintString();
-        final Checks.ChecksImpl checks = new Checks.ChecksImpl(out, 50);
+        final Checks checks = Checks.builder().print(out, 50).build();
 
         final AtomicReference<String> actual = new AtomicReference<>();
 

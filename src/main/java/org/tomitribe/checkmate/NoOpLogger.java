@@ -13,69 +13,44 @@
  */
 package org.tomitribe.checkmate;
 
-import java.io.PrintStream;
-
-public class PrintStreamListener implements CheckLogger {
-
-    private final PrintStream out;
-    private final int column;
-
-    public PrintStreamListener(final PrintStream out, final int column) {
-        this.column = column;
-        this.out = out;
-    }
+public class NoOpLogger implements CheckLogger {
 
     @Override
-    public Check log(final String item) {
-        out.print(item);
-
-        int i = item.length();
-        while (++i < column) {
-            if (i % 2 == 0) {
-                out.print(".");
-            } else {
-                out.print(" ");
-            }
-        }
-
-        if (i % 2 == 1) {
-            out.print(" ");
-        }
-
+    public Check log(final String name) {
         return new Check() {
             @Override
+            public void error(final String reason) {
+
+            }
+
+            @Override
             public void pass() {
-                out.println("PASS");
+
             }
 
             @Override
             public void fail() {
-                out.println("FAIL");
+
             }
 
             @Override
             public void warn() {
-                out.println("WARN");
+
             }
 
             @Override
             public void skip() {
-                out.println("SKIP");
+
             }
 
             @Override
             public void fail(final String reason) {
-                out.println("FAIL  " + reason);
+
             }
 
             @Override
             public void warn(final String reason) {
-                out.println("WARN  " + reason);
-            }
 
-            @Override
-            public void error(final String reason) {
-                out.println("ERROR  " + reason);
             }
         };
     }
