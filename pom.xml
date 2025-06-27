@@ -26,14 +26,14 @@
   </parent>
 
   <artifactId>checkmate</artifactId>
-  <version>1.0</version>
+  <version>1.1-SNAPSHOT</version>
   <name>Tomitribe :: Checkmate</name>
 
   <scm>
     <connection>scm:git:git@github.com:tomitribe/checkmate.git</connection>
     <url>scm:git:git@github.com:tomitribe/checkmate.git</url>
     <developerConnection>scm:git:git@github.com:tomitribe/checkmate.git</developerConnection>
-    <tag>checkmate-1.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <dependencies>
