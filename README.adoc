@@ -64,6 +64,15 @@ checks.object("JAVA_HOME", new File("/opt/java"))
       .check("is writable", File::canWrite);
 ----
 
+The above may generate output like the following:
+
+----
+JAVA_HOME exists . . . . . . . . . . . . . . . . PASS
+JAVA_HOME is directory . . . . . . . . . . . . . PASS
+JAVA_HOME bin readable . . . . . . . . . . . . . SKIP
+JAVA_HOME bin writable . . . . . . . . . . . . . SKIP
+----
+
 === Style 4: Fluent + Inline Return
 Declare the object inline and return it only if all checks pass.
 
