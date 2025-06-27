@@ -4,6 +4,15 @@ Checkmate is a fluent Java library for validating runtime conditions with styled
 
 It supports rich semantics like warnings, fallback values, and exception propagation, and is ideal for configuration validation, deployment assertions, CLI diagnostics or an alternative to some uses of `java.util.Optional`.
 
+[source,xml]
+----
+<dependency>
+  <groupId>org.tomitribe</groupId>
+  <artifactId>checkmate</artifactId>
+  <version>1.0</version>
+</dependency>
+----
+
 == Styles of Checking
 Checkmate supports multiple styles of checking depending on the use case. Each provides a fluent, readable way to validate logic and format output. Choose based on your context: imperative, fluent, test-like, or functional.
 
