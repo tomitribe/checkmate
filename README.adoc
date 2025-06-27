@@ -1,28 +1,185 @@
-# Checkmate
+= Checkmate
 
-Fluent library for chaining small little boolean checks in a stream-like fashion.  Can be used for heath checks, logging
-the results of various forms of analysis, or just because you like fluent code.
+Checkmate is a fluent Java library for validating runtime conditions with styled, aligned output and built-in short-circuiting.  The name is both a nod to the chess term and a play on "mate" as in friend or helper ("check mate").
 
-Checks are built to log to one or more `System.out`, a `PrintStream` or any custom `CheckLogger` via `Checks.builer().build()`.
-All `Checks` start by evaluating an object given a specific name.  For example, this check evaluates the status of a `java.io.File` that points to `java.home`
+It supports rich semantics like warnings, fallback values, and exception propagation, and is ideal for configuration validation, deployment assertions, CLI diagnostics or an alternative to some uses of `java.util.Optional`.
 
-[soure,java]
+== Styles of Checking
+Checkmate supports multiple styles of checking depending on the use case. Each provides a fluent, readable way to validate logic and format output. Choose based on your context: imperative, fluent, test-like, or functional.
+
+=== Style 1: Manual Check with `Check` Object
+This style gives you full control over the logic and messaging. Instantiate a `Check`, run your validation, then call `.pass()`, `.fail()`, or `.error()` accordingly.
+
+[source,java]
 ----
-final File dir = new File(System.getProperty("java.home));
+final File file = new File("/opt/java");
+final Check check = checks.check(file + " exists");
 
-Checks.builder().print(System.out, 50).build()
-        .object("JAVA_HOME", dir)
-        .check("exists", File::exists)
-        .check("is directory", file -> false)
-        .check("can write", file -> called.incrementAndGet() > 0)
-        .check("can can read", file -> called.incrementAndGet() > 0);
+if (file.exists()) {
+    check.pass();
+} else {
+    check.fail();
+}
 ----
 
-This may generate output like the following:
+You can also report exceptions:
 
+[source,java]
 ----
-JAVA_HOME exists . . . . . . . . . . . . . . . . PASS
+try {
+    someAction();
+    check.pass();
+} catch (IOException e) {
+    check.error(e);
+}
+----
+
+=== Style 2: Immediate Lambda Checks
+Simple and concise. Best used when the condition is already evaluated:
+
+[source,java]
+----
+checks.check("File exists", () -> file.exists());
+checks.check("Optional config", () -> config.isPresent(), WARN);
+----
+
+=== Style 3: Fluent Checks on a Single Object
+Use `checks.object("label", object)` for multiple validations on the same object. Checks short-circuit after the first failure.
+
+[source,java]
+----
+checks.object("JAVA_HOME", new File("/opt/java"))
+      .check("exists", File::exists)
+      .check("is directory", File::isDirectory)
+      .check("is readable", File::canRead)
+      .check("is writable", File::canWrite);
+----
+
+=== Style 4: Fluent + Inline Return
+Declare the object inline and return it only if all checks pass.
+
+[source,java]
+----
+final File dir = checks.object("JAVA_HOME", new File("/opt/java"))
+                       .check("exists", File::exists)
+                       .check("is directory", File::isDirectory)
+                       .check("can read", File::canRead)
+                       .getOrThrow(() -> new IllegalStateException("Invalid JAVA_HOME"));
+----
+
+=== Style 5: Navigating Sub-Objects with `.map()`
+Use `.map()` to chain checks to derived objects. Skips downstream checks if prior ones fail.
+
+[source,java]
+----
+final File bin = checks.object("JAVA_HOME", dir)
+                       .check("exists", File::exists)
+                       .check("is directory", file -> false)
+                       .map("bin directory", file -> new File("bin"))
+                       .check("exists", File::exists)
+                       .check("is file", File::isFile)
+                       .check("can read", File::canRead)
+                       .getOrThrow(() -> new RuntimeException("Invalid JAVA_HOME/bin/ directory"));
+----
+
+Output:
+----
+JAVA_HOME exists. . . . . . . . . . . . . . . . . PASS
 JAVA_HOME is directory . . . . . . . . . . . . . FAIL
-JAVA_HOME can write. . . . . . . . . . . . . . . SKIP
-JAVA_HOME can can read . . . . . . . . . . . . . SKIP
+----
+
+=== Style 6: Fallbacks with `.or()`
+Use `.or(...)` to try alternative objects if validation fails.
+
+[source,java]
+----
+final File javaHome = checks.object("JAVA_HOME", new File("/opt/java"))
+    .check("exists", File::exists)
+    .check("is directory", File::isDirectory)
+.or("JAVA_HOME (fallback #1)", new File("/usr/lib/jvm/java-11-openjdk"))
+    .check("exists", File::exists)
+    .check("is directory", File::isDirectory)
+.or("JAVA_HOME (fallback #2)", new File("/usr/java/latest"))
+    .check("exists", File::exists)
+    .check("is directory", File::isDirectory)
+.or("JAVA_HOME (fallback #3)", new File(System.getProperty("java.home")))
+    .check("exists", File::exists)
+    .check("is directory", File::isDirectory)
+.getOrThrow(() -> new IllegalStateException("No valid JAVA_HOME found"));
+----
+
+Output:
+----
+JAVA_HOME exists. . . . . . . . . . . . . . . . . FAIL
+JAVA_HOME is directory. . . . . . . . . . . . . . SKIP
+JAVA_HOME (fallback #1) exists. . . . . . . . . . FAIL
+JAVA_HOME (fallback #1) is directory. . . . . . . SKIP
+JAVA_HOME (fallback #2) exists. . . . . . . . . . PASS
+JAVA_HOME (fallback #2) is directory . . . . . . PASS
+----
+
+== Controlling Output
+
+=== Printing to Console
+To enable output:
+
+[source,java]
+----
+final Checks checks = Checks.builder()
+                            .print(System.out, 50)
+                            .build();
+----
+
+=== Silent Mode
+To disable output:
+
+[source,java]
+----
+final Checks checks = Checks.builder().build();
+----
+
+This is useful when you’re using `.getOrThrow()` or `.result()` to control flow and don’t want logging.
+
+=== Implementing Custom Output
+You can implement your own output using `CheckLogger`.
+
+[source,java]
+----
+public class Slf4jLogger implements CheckLogger {
+    private final Logger logger = LoggerFactory.getLogger("checkmate");
+
+    @Override
+    public Check log(final String name) {
+        return new Check() {
+            public void pass() { logger.info("{} PASS", name); }
+            public void fail() { logger.error("{} FAIL", name); }
+            public void warn() { logger.warn("{} WARN", name); }
+            public void skip() { logger.debug("{} SKIP", name); }
+            public void fail(String reason) { logger.error("{} FAIL  {}", name, reason); }
+            public void warn(String reason) { logger.warn("{} WARN  {}", name, reason); }
+            public void error(String reason) { logger.error("{} ERROR {}", name, reason); }
+        };
+    }
+}
+----
+
+Register the logger:
+
+[source,java]
+----
+final Checks checks = Checks.builder()
+                            .logger(new Slf4jLogger())
+                            .build();
+----
+
+=== Multiple Loggers
+
+Multiple loggers may be used:
+
+[source,java]
+----
+Checks.builder()
+      .logger(new Slf4jLogger())
+      .print(System.out, 50)
+      .build();
 ----
